@@ -20,8 +20,8 @@
 # build/src 是一個 git 倉庫（基準 tag：baseline-<版本>），在主機上以目前使用者執行：
 #   ./docker-dev.sh src-status          # 目前相對上次存檔改了哪些檔案
 #   ./docker-dev.sh src-save "說明"     # 把目前的修改存成一個提交
-#   ./docker-dev.sh src-restore [ref]   # 丟棄未存檔的修改，回到 ref（預設最近一次存檔）
-#   ./docker-dev.sh src-log             # 列出存檔
+#   ./docker-dev.sh src-restore [存檔]  # 丟棄未存檔的修改，回到該存檔（預設目前這個存檔）
+#   ./docker-dev.sh src-log             # 列出所有存檔（save-<時間> 與 baseline-<版本> 標籤）
 #
 # 環境變數：
 #   WORK_HOST  主機上的工作目錄（預設 ~/clearcote-build，需要約 150 GB）
@@ -113,13 +113,14 @@ case "$cmd" in
     [ -n "${1:-}" ] || { echo "用法：$0 src-save \"說明\""; exit 2; }
     # -f：Chromium 的 .gitignore 會忽略各 DEPS 子目錄（實為原始碼），排除項見 SRC_EXCLUDES
     srcgit add -A -f -- . "${SRC_EXCLUDES[@]}"
-    srcgit commit -q -m "$1" && srcgit log --oneline -1 ;;
+    # 每個存檔都打 save-<時間> 標籤：還原到較早的存檔後，之後的存檔仍保留、可再回去
+    srcgit commit -q -m "$1" && srcgit tag "save-$(date +%Y%m%d-%H%M%S)" && srcgit log --oneline --decorate -1 ;;
   src-restore)
     ref="${1:-HEAD}"
     srcgit rev-parse -q --verify "$ref^{commit}" >/dev/null || { echo "找不到 $ref（見 $0 src-log）"; exit 2; }
     # 只動到有差異的檔案，之後 build 仍是增量編譯；out/ 與工具鏈在 info/exclude 中，git clean 不會碰
     srcgit reset -q --hard "$ref" && srcgit clean -fdq && echo "已回到 $(srcgit log --oneline -1 "$ref")" ;;
-  src-log)     srcgit log --oneline --decorate -20 ;;
+  src-log)     srcgit log --oneline --decorate --no-walk --tags='baseline-*' --tags='save-*' ;;
   stop)   docker stop "$NAME" ;;
   rm)     docker rm -f "$NAME" ;;
   *) sed -n '2,29p' "$0"; exit 2 ;;
