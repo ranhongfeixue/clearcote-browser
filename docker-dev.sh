@@ -17,6 +17,12 @@
 #   ./docker-dev.sh chown         # 把 $WORK 的檔案擁有者改回目前使用者（方便在主機直接編輯 build/src）
 #   ./docker-dev.sh stop | rm     # 停止 / 刪除容器（資料仍在 $WORK_HOST）
 #
+# build/src 是一個 git 倉庫（基準 tag：baseline-<版本>），在主機上以目前使用者執行：
+#   ./docker-dev.sh src-status          # 目前相對上次存檔改了哪些檔案
+#   ./docker-dev.sh src-save "說明"     # 把目前的修改存成一個提交
+#   ./docker-dev.sh src-restore [ref]   # 丟棄未存檔的修改，回到 ref（預設最近一次存檔）
+#   ./docker-dev.sh src-log             # 列出存檔
+#
 # 環境變數：
 #   WORK_HOST  主機上的工作目錄（預設 ~/clearcote-build，需要約 150 GB）
 #   JOBS         ninja 並行數（預設 16；27 GB RAM 實測全量編譯峰值約 17 GB）
@@ -71,6 +77,17 @@ run_stage() { # NN
   cexec "mkdir -p $W/logs && set -o pipefail && bash /clearcote/scripts/$s 2>&1 | tee $W/logs/$s.log && touch $W/.done-$n"
 }
 
+# build/src 的 git 快照：不追蹤編譯輸出、下載的工具鏈與自帶 .git 的外部相依（同 .git/info/exclude）
+srcgit() { git -C "$WORK_HOST/build/src" "$@"; }
+SRC_EXCLUDES=(
+  ':(exclude)out' ':(exclude)third_party/llvm-build' ':(exclude)third_party/rust-toolchain'
+  ':(exclude)build/linux/debian_bullseye_amd64-sysroot' ':(exclude)third_party/node/linux'
+  ':(exclude)third_party/node/win' ':(exclude)third_party/gperf/cipd'
+  ':(exclude)third_party/devtools-frontend/src/third_party/esbuild/esbuild'
+  ':(exclude)build/toolchain/win/rc/linux64/rc' ':(exclude)third_party/microsoft_webauthn/src'
+  ':(exclude)third_party/microsoft_dxheaders/src' ':(exclude,glob)**/__pycache__/**' ':(exclude,glob)**/*.pyc'
+)
+
 cmd="${1:-}"; shift || true
 case "$cmd" in
   full)
@@ -91,7 +108,19 @@ case "$cmd" in
     echo "已刪除 build/src；接著執行 $0 full（下載快取還在，不會重新下載 tarball）" ;;
   shell)  ensure_container; ensure_mount; docker exec -it -e JOBS="$JOBS" -w "$W" "$NAME" bash ;;
   chown)  ensure_container; cexec "chown -R $(id -u):$(id -g) $W" ;;
+  src-status)  srcgit status --short | head -200; srcgit diff --stat HEAD | tail -1 ;;
+  src-save)
+    [ -n "${1:-}" ] || { echo "用法：$0 src-save \"說明\""; exit 2; }
+    # -f：Chromium 的 .gitignore 會忽略各 DEPS 子目錄（實為原始碼），排除項見 SRC_EXCLUDES
+    srcgit add -A -f -- . "${SRC_EXCLUDES[@]}"
+    srcgit commit -q -m "$1" && srcgit log --oneline -1 ;;
+  src-restore)
+    ref="${1:-HEAD}"
+    srcgit rev-parse -q --verify "$ref^{commit}" >/dev/null || { echo "找不到 $ref（見 $0 src-log）"; exit 2; }
+    # 只動到有差異的檔案，之後 build 仍是增量編譯；out/ 與工具鏈在 info/exclude 中，git clean 不會碰
+    srcgit reset -q --hard "$ref" && srcgit clean -fdq && echo "已回到 $(srcgit log --oneline -1 "$ref")" ;;
+  src-log)     srcgit log --oneline --decorate -20 ;;
   stop)   docker stop "$NAME" ;;
   rm)     docker rm -f "$NAME" ;;
-  *) sed -n '2,25p' "$0"; exit 2 ;;
+  *) sed -n '2,29p' "$0"; exit 2 ;;
 esac
