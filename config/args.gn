@@ -53,6 +53,9 @@ symbol_level = 0
 blink_symbol_level = 0
 chrome_pgo_phase = 0                  # no downloaded PGO profiles
 use_remoteexec = false
+dcheck_always_on = false              # 非 official 建置預設 dcheck_always_on = !is_official_build = true，
+                                      # DCHECK 失敗會 ImmediateCrash（Windows 上為 STATUS_BREAKPOINT），
+                                      # 在 captcha 等頁面造成 renderer 隨機崩潰（上游 issue #24）。
 enable_precompiled_headers = false    # clang 23 的 clang-cl /Yc 搭配 -fmodule-name 會把 build/precompile.cc
                                       # 當成模組介面單元而報錯（missing 'export module' declaration）。
                                       # PCH 只影響編譯速度，不影響產出的二進位檔。
