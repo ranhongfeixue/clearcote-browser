@@ -24,8 +24,8 @@ ENV DEBIAN_FRONTEND=noninteractive
 # need the source tree that scripts/00 fetches first. ciopfs = case-insensitive overlay for the
 # Windows SDK headers; xz-utils = unpack the Linux .tar.xz.
 RUN apt-get update && apt-get install -y --no-install-recommends \
-      git python3 python3-pip curl ca-certificates \
-      ninja-build zip unzip xz-utils ciopfs patch binutils \
+      git python3 python3-pip curl wget ca-certificates \
+      ninja-build zip unzip xz-utils ciopfs msitools patch binutils \
       sudo lsb-release file pkg-config \
  && rm -rf /var/lib/apt/lists/*
 

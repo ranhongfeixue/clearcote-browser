@@ -20,6 +20,10 @@ ulimit -n 1048576 2>/dev/null || ulimit -n "$(ulimit -Hn)"
 # the in-tree clang/lld is the (cross-)compiler for both targets
 export PATH="$SRC/third_party/llvm-build/Release+Asserts/bin:$PATH"
 
+# build/rust/gni_impl/run_bindgen.py 看到環境變數 TARGET 會直接失敗（"saw TARGET in environment"），
+# 只取消匯出，腳本內仍可使用 $TARGET。
+export -n TARGET
+
 mkdir -p out/Default
 
 if [ "$TARGET" = "windows" ]; then

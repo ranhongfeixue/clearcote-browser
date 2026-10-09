@@ -110,16 +110,20 @@
  //
 --- a/ui/accessibility/platform/uia_client_info_source_win.cc
 +++ b/ui/accessibility/platform/uia_client_info_source_win.cc
-@@ -23,6 +23,13 @@
+@@ -23,6 +23,17 @@
  
  #include <UIAutomationCore.h>
  
-+// clearcoat win-cross-build fix: the cross Windows SDK uuid.lib predates the
++// clearcoat win-cross-build fix: an older cross Windows SDK uuid.lib predates the
 +// CUIAutomationClientInfoSource coclass, so CLSID_CUIAutomationClientInfoSource is
-+// declared (EXTERN_C const CLSID) but never defined. Define it here from the
-+// Windows SDK 10.0.26100 UIAutomationCore.idl coclass uuid.
-+extern "C" const CLSID CLSID_CUIAutomationClientInfoSource = {
++// declared (EXTERN_C const CLSID) but never defined, while newer ones (e.g. the
++// SDK 10.0.26100 that xwin fetches) do define it and a plain definition here is a
++// duplicate symbol. Provide a fallback under another name and let the linker use
++// it only when nothing else defines the CLSID (/alternatename), so both link.
++// uuid from the Windows SDK 10.0.26100 UIAutomationCore.idl coclass.
++extern "C" const CLSID clearcote_fallback_CLSID_CUIAutomationClientInfoSource = {
 +    0xA8D4F123, 0x7B2C, 0x4E5F, {0x9A, 0x1B, 0x3C, 0x8D, 0x6E, 0x9F, 0x0A, 0x2B}};
++#pragma comment(linker, "/alternatename:CLSID_CUIAutomationClientInfoSource=clearcote_fallback_CLSID_CUIAutomationClientInfoSource")
 +
  namespace ui {
  namespace {

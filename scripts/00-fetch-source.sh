@@ -26,6 +26,16 @@ python3 ungoogled-chromium/utils/downloads.py unpack  -c download_cache -i ungoo
 # prune non-source binaries (ungoogled list)
 python3 ungoogled-chromium/utils/prune_binaries.py build/src ungoogled-chromium/pruning.list
 
+# 還原被 prune 掉的 win_build_output（midl 的 .tlb、mc 的 MSG*.bin）：這些是 Chromium 官方在 Windows
+# 上產生後提交的輸出，非 Windows 主機無法執行 midl/mc，交叉編譯只能使用它們，缺了 midl.py 會報
+# "needs to be generated from Windows first"。只從同一個已驗證的原始 tarball 取回這些檔案。
+if [ "${TARGET:-windows}" = "windows" ] && [ ! -e build/src/.clearcote-win-build-output ]; then
+  TARBALL="$(ls download_cache/chromium-*.tar.xz | head -1)"
+  mapfile -t WBO < <(grep -E '(^|/)win_build_output/' ungoogled-chromium/pruning.list | sed 's|^|*/|')
+  tar -xJf "$TARBALL" -C build/src --strip-components=1 --wildcards "${WBO[@]}"
+  touch build/src/.clearcote-win-build-output
+fi
+
 # Windows-only sub-DEPS (DEPS `condition: 'checkout_win'`) that downloads.py does NOT fetch —
 # the build needs these or gn gen / link fails. Clone the exact pinned revisions.
 CGIT="https://chromium.googlesource.com"
