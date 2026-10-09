@@ -75,6 +75,11 @@ run_stage() { # NN
   [ "$n" = 04 ] && ensure_mount
   echo; echo "==== $s ===="
   cexec "mkdir -p $W/logs && set -o pipefail && bash /clearcote/scripts/$s 2>&1 | tee $W/logs/$s.log && touch $W/.done-$n"
+  # 本機私人掛勾（不提交）：打包後執行 temp/post-package.sh，例如把額外檔案加進 zip
+  if [ "$n" = 05 ] && [ -f "$REPO/temp/post-package.sh" ]; then
+    echo; echo "==== temp/post-package.sh ===="
+    cexec "bash /clearcote/temp/post-package.sh"
+  fi
 }
 
 # build/src 的 git 快照：不追蹤編譯輸出、下載的工具鏈與自帶 .git 的外部相依（同 .git/info/exclude）
