@@ -114,7 +114,7 @@ Every surface must describe **one plausible real machine**, and that machine mus
 | Geolocation | ✅ | Camoufox | keep, no auto-grant |
 | Device sensors | ❌ | ChromiumFish device-sensors | ➕ add |
 | Timing (performance.now) | ❌ | ChromiumFish timing-misc | ➕ regression assert |
-| Closed Shadow DOM | ✅ | adryfish FakeShadowRoot | keep |
+| Closed Shadow DOM | Removed | adryfish FakeShadowRoot | Removed the non-standard web-visible attribute; preserve standard access rules |
 | Port-scan protection | ❌ | BotBrowser | ★ differentiator |
 | **De-Google telemetry (GCM :5228)** | partial | (ChromiumFish failed own audit) | ★ beat them on privacy |
 

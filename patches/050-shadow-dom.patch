@@ -1,3 +1,8 @@
+Remove inherited client-rect noise so element and range geometry stays coherent.
+
+Do not expose an extra DOM attribute for closed shadow roots: preserve the standard
+shadowRoot access rules and avoid adding a web-visible browser identifier.
+
 --- a/third_party/blink/renderer/core/dom/document.cc
 +++ b/third_party/blink/renderer/core/dom/document.cc
 @@ -1040,11 +1040,6 @@
@@ -72,38 +77,6 @@
    return result;
  }
  
-@@ -7770,6 +7764,11 @@
-   return root && root->GetMode() == ShadowRootMode::kOpen ? root : nullptr;
- }
- 
-+ShadowRoot* Element::FakeShadowRoot() const {
-+  ShadowRoot* root = GetShadowRoot();
-+  return root;
-+}
-+
- ShadowRoot* Element::ClosedShadowRoot() const {
-   ShadowRoot* root = GetShadowRoot();
-   if (!root) {
---- a/third_party/blink/renderer/core/dom/element.h
-+++ b/third_party/blink/renderer/core/dom/element.h
-@@ -1098,6 +1098,7 @@
-     return HasShadowRoot() ? GetShadowRootInternal() : nullptr;
-   }
-   ShadowRoot* OpenShadowRoot() const;
-+  ShadowRoot* FakeShadowRoot() const;
-   ShadowRoot* ClosedShadowRoot() const;
-   ShadowRoot* AuthorShadowRoot() const;
-   ShadowRoot* UserAgentShadowRoot() const;
---- a/third_party/blink/renderer/core/dom/element.idl
-+++ b/third_party/blink/renderer/core/dom/element.idl
-@@ -81,6 +81,7 @@
- 
-     [RaisesException, MeasureAs=ElementAttachShadow] ShadowRoot attachShadow(ShadowRootInit shadowRootInitDict);
-     [PerWorldBindings, ImplementedAs=OpenShadowRoot] readonly attribute ShadowRoot? shadowRoot;
-+    [PerWorldBindings, ImplementedAs=FakeShadowRoot] readonly attribute ShadowRoot? fakeShadowRoot;
- 
-     [RaisesException] Element? closest(DOMString selectors);
-     [RaisesException] boolean matches(DOMString selectors);
 --- a/third_party/blink/renderer/core/dom/range.cc
 +++ b/third_party/blink/renderer/core/dom/range.cc
 @@ -1662,12 +1662,6 @@

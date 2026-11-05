@@ -74,7 +74,7 @@ Evidence in `brave-core`: a dedicated `components/brave_shields/content/browser/
 | Speech / voices | ❌ | Camoufox + Brave | ➕ add |
 | Device sensors | ❌ | ChromiumFish device-sensors | ➕ add |
 | Timing (`performance.now` quantize) | ❌ | ChromiumFish timing-misc | ➕ add |
-| Closed Shadow DOM access (automation) | ✅ | adryfish FakeShadowRoot | ✅ keep |
+| Closed Shadow DOM access (automation) | Removed | adryfish FakeShadowRoot | Removed the non-standard web-visible attribute; preserve standard access rules |
 | Port-scan protection (localhost) | ❌ | BotBrowser port-protection | ★ differentiator |
 | **De-Google telemetry (port 5228 GCM)** | partial | (ChromiumFish *failed* its own audit here) | ★ beat them on privacy |
 

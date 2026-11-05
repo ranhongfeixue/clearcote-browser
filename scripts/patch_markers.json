@@ -116,15 +116,13 @@
       }
     },
     "050-shadow-dom.patch": {
-      "surface": "Exposes a non-standard Element.fakeShadowRoot DOM attribute that returns even closed shadow roots (bypassing the open-mode check); also migrates get*ClientRects farbling from Scale() to a per-site --fingerprint-gated Offset() model that is currently coherence-disabled to zero.",
+      "surface": "Removes inherited client-rect noise (Document::GetNoiseFactorX/Y, noise_factor_* members and all four Scale() call sites). Removes the non-standard Element.fakeShadowRoot attribute and preserves standard shadow-root access rules.",
       "windows_only": false,
-      "markers": [
-        "fakeShadowRoot"
-      ],
+      "markers": [],
       "runtime": {
-        "surface": "Element.prototype.fakeShadowRoot (non-standard DOM attribute exposing closed shadow roots)",
-        "probe": "(() => { const el = document.createElement('div'); const sr = el.attachShadow({ mode: 'closed' }); return el.shadowRoot === null && el.fakeShadowRoot === sr; })()",
-        "expect": "true on a correctly-patched build (closed shadow root is hidden from standard .shadowRoot but returned by the patch-added .fakeShadowRoot); vanilla Chromium returns false because .fakeShadowRoot is undefined. A simpler existence check, 'fakeShadowRoot' in document.createElement('div'), is true patched / false vanilla."
+        "surface": "No fakeShadowRoot DOM attribute; open roots remain accessible through shadowRoot and closed roots remain hidden.",
+        "probe": "(() => { const closed = document.createElement('div'); closed.attachShadow({ mode: 'closed' }); const open = document.createElement('div'); const root = open.attachShadow({ mode: 'open' }); return !('fakeShadowRoot' in Element.prototype) && Object.getOwnPropertyDescriptor(Element.prototype, 'fakeShadowRoot') === undefined && !('fakeShadowRoot' in closed) && closed.fakeShadowRoot === undefined && closed.shadowRoot === null && open.shadowRoot === root; })()",
+        "expect": "true: the non-standard attribute is absent, an open root is accessible through shadowRoot, and a closed root is hidden. Run the probe with and without --fingerprint."
       }
     },
     "060-canvas.patch": {
